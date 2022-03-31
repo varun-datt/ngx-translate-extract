@@ -85,6 +85,12 @@ describe('DirectiveParser', () => {
 		expect(keys).to.deep.equal(['MY_KEY']);
 	});
 
+	it('should use translate attribute value as key when present with custom directive name', () => {
+		const contents = '<div myTranslate="MY_KEY">Hello World<div>';
+		const keys = new DirectiveParser(['myTranslate']).extract(contents, templateFilename).keys();
+		expect(keys).to.deep.equal(['MY_KEY']);
+	});
+
 	it('should extract keys from child elements when translate attribute is present', () => {
 		const contents = `<div translate>Hello <strong translate>World</strong></div>`;
 		const keys = parser.extract(contents, templateFilename).keys();
@@ -106,6 +112,18 @@ describe('DirectiveParser', () => {
 			export class TestComponent { }
 		`;
 		const keys = parser.extract(contents, componentFilename).keys();
+		expect(keys).to.deep.equal(['Hello World']);
+	});
+
+	it('should extract and parse inline template with custom directive name', () => {
+		const contents = `
+			@Component({
+				selector: 'test',
+				template: '<p myTranslate>Hello World</p>'
+			})
+			export class TestComponent { }
+		`;
+		const keys = new DirectiveParser(['myTranslate']).extract(contents, componentFilename).keys();
 		expect(keys).to.deep.equal(['Hello World']);
 	});
 

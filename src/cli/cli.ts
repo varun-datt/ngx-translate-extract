@@ -104,10 +104,41 @@ export const cli = y
 		type: 'string',
 		conflicts: ['null-as-default-value', 'key-as-default-value']
 	})
+	.option('marker', {
+		alias: 'm',
+		describe: 'Use a default marker (overrides the default which looks for a direct import from @biesjberg/ng-translate-extract-marker)',
+		type: 'string'
+	})
+	.option('pipe', {
+		describe: 'Check for these pipe names when extracting',
+		type: 'array',
+		default: ['translate'],
+		normalize: true
+	})
+	.option('service-name', {
+		describe: 'Check for this service name when extracting',
+		default: 'TranslateService',
+		type: 'string'
+	})
+	.option('service-method-name', {
+		describe: 'Check for these service method names when extracting',
+		type: 'array',
+		default: ['get', 'instant', 'stream'],
+		normalize: true
+	})
+	.option('directive', {
+		describe: 'Check for these directive names when extracting.',
+		type: 'array',
+		default: ['translate'],
+		normalize: true
+	})
 	.group(['format', 'format-indentation', 'sort', 'clean', 'replace'], 'Output')
 	.group(['key-as-default-value', 'null-as-default-value', 'string-as-default-value'], 'Extracted key value (defaults to empty string)')
 	.conflicts('key-as-default-value', 'null-as-default-value')
 	.example(`$0 -i ./src-a/ -i ./src-b/ -o strings.json`, 'Extract (ts, html) from multiple paths')
+	.example(`$0 -i ./src-a/ -o strings.json -m i18n`, 'Extract (ts, html), using custom marker name "i18n"')
+	.example(`$0 -i ./src-a/ -o strings.json --pipe translate --pipe translateAdvanced`, 'Extract (ts, html), using custom names for all translate pipes ("translate" and "translateAdvanced")')
+	.example(`$0 -i ./src-a/ -o strings.json --service-name AdvancedTranslateService --service-method-name get --service-method-name getAll`, 'Extract (ts, html), using custom service name "AdvancedTranslateService" and custom service method names: get, getAll')
 	.example(`$0 -i './{src-a,src-b}/' -o strings.json`, 'Extract (ts, html) from multiple paths using brace expansion')
 	.example(`$0 -i ./src/ -o ./i18n/da.json -o ./i18n/en.json`, 'Extract (ts, html) and save to da.json and en.json')
 	.example(`$0 -i ./src/ -o './i18n/{en,da}.json'`, 'Extract (ts, html) and save to da.json and en.json using brace expansion')
@@ -122,7 +153,12 @@ const extractTask = new ExtractTask(cli.input, cli.output, {
 });
 
 // Parsers
-const parsers: ParserInterface[] = [new PipeParser(), new DirectiveParser(), new ServiceParser(), new MarkerParser()];
+const parsers: ParserInterface[] = [
+	new PipeParser(cli.pipe),
+	new DirectiveParser(cli.directive),
+	new ServiceParser(cli['service-name'], cli['service-method-name']),
+	new MarkerParser(cli.marker)
+];
 extractTask.setParsers(parsers);
 
 // Post processors
