@@ -44,16 +44,7 @@ export class ExtractTask implements TaskInterface {
 
 		this.out(bold('Saving:'));
 
-		this.outputs.forEach((output) => {
-			let dir: string = output;
-			let filename: string = `strings.${this.compiler.extension}`;
-			if (!fs.existsSync(output) || !fs.statSync(output).isDirectory()) {
-				dir = path.dirname(output);
-				filename = path.basename(output);
-			}
-
-			const outputPath: string = path.join(dir, filename);
-
+		this.outputs.forEach((output) => this.getFiles(output).forEach((outputPath) => {
 			let existing: TranslationCollection = new TranslationCollection();
 			if (!this.options.replace && fs.existsSync(outputPath)) {
 				try {
@@ -82,7 +73,7 @@ export class ExtractTask implements TaskInterface {
 				this.out(`%s %s`, dim(`- ${outputPath}`), red(`[ERROR]`));
 				throw e;
 			}
-		});
+		}));
 	}
 
 	public setParsers(parsers: ParserInterface[]): this {
