@@ -12,6 +12,7 @@
     "ngx-translate-extract": "bin/cli.js"
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "npm run clean && tsc",
     "watch": "npm run clean && tsc --watch",
     "clean": "rimraf ./dist",
