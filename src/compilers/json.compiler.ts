@@ -7,6 +7,7 @@ const { flatten } = pkg;
 
 export class JsonCompiler implements CompilerInterface {
 	public indentation: string = '\t';
+	public newlineAtEndOfFile = true;
 
 	public extension: string = 'json';
 
@@ -14,10 +15,17 @@ export class JsonCompiler implements CompilerInterface {
 		if (options && typeof options.indentation !== 'undefined') {
 			this.indentation = options.indentation;
 		}
+		if (options && typeof options.newlineAtEndOfFile !== 'undefined') {
+			this.newlineAtEndOfFile = options.newlineAtEndOfFile;
+		}
 	}
 
 	public compile(collection: TranslationCollection): string {
-		return JSON.stringify(collection.values, null, this.indentation);
+		let json = JSON.stringify(collection.values, null, this.indentation);
+		if (this.newlineAtEndOfFile) {
+			json += '\n';
+		}
+		return json;
 	}
 
 	public parse(contents: string): TranslationCollection {

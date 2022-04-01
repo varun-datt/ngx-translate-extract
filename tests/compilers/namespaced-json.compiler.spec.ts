@@ -7,7 +7,7 @@ describe('NamespacedJsonCompiler', () => {
 	let compiler: NamespacedJsonCompiler;
 
 	beforeEach(() => {
-		compiler = new NamespacedJsonCompiler();
+		compiler = new NamespacedJsonCompiler({ newlineAtEndOfFile: false });
 	});
 
 	it('should flatten keys on parse', () => {
@@ -53,7 +53,8 @@ describe('NamespacedJsonCompiler', () => {
 			'NAMESPACE.KEY.SECOND_KEY': 'VALUE'
 		});
 		const customCompiler = new NamespacedJsonCompiler({
-			indentation: '  '
+			indentation: '  ',
+			newlineAtEndOfFile: false
 		});
 		const result: string = customCompiler.compile(collection);
 		expect(result).to.equal('{\n  "NAMESPACE": {\n    "KEY": {\n      "FIRST_KEY": "",\n      "SECOND_KEY": "VALUE"\n    }\n  }\n}');
