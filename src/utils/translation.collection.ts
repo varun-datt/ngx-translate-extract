@@ -60,6 +60,18 @@ export class TranslationCollection {
 		return new TranslationCollection(values);
 	}
 
+	public difference(collection: TranslationCollection): TranslationCollection {
+		const values: TranslationType = {};
+		this.filter((key) => !collection.has(key)).forEach((key, val) => {
+			values[key] = val;
+		});
+		collection.filter((key) => !this.has(key)).forEach((key, val) => {
+			values[key] = val;
+		});
+
+		return new TranslationCollection(values);
+	}
+
 	public has(key: string): boolean {
 		return this.values.hasOwnProperty(key);
 	}

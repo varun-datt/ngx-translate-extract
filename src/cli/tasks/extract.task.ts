@@ -12,6 +12,7 @@ const { sync } = pkg;
 
 export interface ExtractTaskOptionsInterface {
 	replace?: boolean;
+	lint?: boolean;
 }
 
 export class ExtractTask implements TaskInterface {
@@ -42,7 +43,7 @@ export class ExtractTask implements TaskInterface {
 		const extracted = this.extract();
 		this.out(green(`\nFound %d strings.\n`), extracted.count());
 
-		this.out(bold('Saving:'));
+		this.out(bold(this.options.lint ? 'Lint:' : 'Saving:'));
 
 		this.outputs.forEach((output) => this.getFiles(output).forEach((outputPath) => {
 			let existing: TranslationCollection = new TranslationCollection();
@@ -60,6 +61,16 @@ export class ExtractTask implements TaskInterface {
 
 			// Run collection through post processors
 			const final = this.process(draft, extracted, existing);
+
+			if (this.options.lint) {
+				const diff = final.difference(existing);
+				if (diff.count() !== 0) {
+					this.out(`%s %s`, dim(`- ${outputPath}`), red(`[ERROR]`));
+					throw new Error(`ngx-translate-extract: Linting failed \n\n ${diff.keys()}`);
+				}
+				this.out(`%s %s`, dim(`- ${outputPath}`), green(`[MATCHED]`));
+				return;
+			}
 
 			// Save
 			try {

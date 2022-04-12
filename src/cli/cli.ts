@@ -139,6 +139,10 @@ export const cli = y
 		default: true,
 		type: 'boolean'
 	})
+	.option('lint', {
+		describe: 'Lint locale files',
+		type: 'boolean'
+	})
 	.group(['format', 'format-indentation', 'sort', 'clean', 'replace'], 'Output')
 	.group(['key-as-default-value', 'null-as-default-value', 'string-as-default-value'], 'Extracted key value (defaults to empty string)')
 	.conflicts('key-as-default-value', 'null-as-default-value')
@@ -146,6 +150,7 @@ export const cli = y
 	.example(`$0 -i ./src-a/ -o strings.json -m i18n`, 'Extract (ts, html), using custom marker name "i18n"')
 	.example(`$0 -i ./src-a/ -o strings.json --pipe translate --pipe translateAdvanced`, 'Extract (ts, html), using custom names for all translate pipes ("translate" and "translateAdvanced")')
 	.example(`$0 -i ./src-a/ -o strings.json --service-name AdvancedTranslateService --service-method-name get --service-method-name getAll`, 'Extract (ts, html), using custom service name "AdvancedTranslateService" and custom service method names: get, getAll')
+	.example(`$0 -i ./src-a/ -o strings.json --lint`, 'Lint (ts, html) files')
 	.example(`$0 -i './{src-a,src-b}/' -o strings.json`, 'Extract (ts, html) from multiple paths using brace expansion')
 	.example(`$0 -i ./src/ -o ./i18n/da.json -o ./i18n/en.json`, 'Extract (ts, html) and save to da.json and en.json')
 	.example(`$0 -i ./src/ -o './i18n/{en,da}.json'`, 'Extract (ts, html) and save to da.json and en.json using brace expansion')
@@ -156,7 +161,8 @@ export const cli = y
 	.parse(process.argv);
 
 const extractTask = new ExtractTask(cli.input, cli.output, {
-	replace: cli.replace
+	replace: cli.replace,
+	lint: cli.lint
 });
 
 // Parsers
