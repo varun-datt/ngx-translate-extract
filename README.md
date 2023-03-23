@@ -1,3 +1,23 @@
+# Fork of @biesbjerg/ngx-translate-extract
+Install the package in your project:
+
+`npm install @vpoppy/ngx-translate-extract --save-dev`
+
+### Enhancements
+- Add ability to specify custom marker, service, pipe names
+  - (multiple) pipe names (`--pipe translate --pipe myTranslate`),
+  - (multiple) directive names (`--directive translate --directive myTranslate`),
+  - service name (`--service-name MyTranslateService`)
+  - service methods (default were `get`, `instant` and `stream`): `--service-method-name get --service-method-name myCustomGet`
+  - marker name (`-m i18n`)
+- Support for Angular 15+
+- Lint functionality that can be used in CI
+- Add end-of-file line
+
+---
+---
+---
+
 If this tool saves you time, please consider making a donation towards the continued maintainence and development: https://donate.biesbjerg.com
 
 [![Donate](images/donate-badge.png)](https://donate.biesbjerg.com)

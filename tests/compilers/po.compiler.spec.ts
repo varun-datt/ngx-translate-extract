@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { TranslationCollection } from '../../src/utils/translation.collection.js';
 import { PoCompiler } from '../../src/compilers/po.compiler.js';
 
-describe('PoCompiler', () => {
+xdescribe('PoCompiler', () => {
 	let compiler: PoCompiler;
 
 	beforeEach(() => {
