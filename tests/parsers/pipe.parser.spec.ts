@@ -210,4 +210,131 @@ describe('PipeParser', () => {
 		const keys = parser.extract(contents, templateFilename).keys();
 		expect(keys).to.deep.equal([`Hello`, `World`]);
 	});
+
+	it('should extract from objects in property bindings', () => {
+		const contents = "<hello [values] =\"{ hello: ('Hello' | translate), world: ('World' | translate) }\"></hello>";
+		const keys = parser.extract(contents, templateFilename).keys();
+		expect(keys).to.deep.equal(['Hello', 'World']);
+	});
+
+	it('should extract from structural directives', () => {
+		const contents = '<ng-container *ngIf="\'Hello\' | translate as hello">{{hello}}</ng-container>';
+		const keys = parser.extract(contents, templateFilename).keys();
+		expect(keys).to.deep.equal(['Hello']);
+	});
+
+	it('should extract form inputs to structural directives', () => {
+		const contents =
+			"<ng-container *ngTemplateOutlet=\"template; context:{ hello: 'Hello' | translate, world: 'World' | translate }\"></ng-container>";
+		const keys = parser.extract(contents, templateFilename).keys();
+		expect(keys).to.deep.equal(['Hello', 'World']);
+	});
+
+	describe('Built-in control flow', () => {
+		it('should extract keys from elements inside an @if/@else block', () => {
+			const contents = `
+				@if (loggedIn) {
+					{{ 'if.block' | translate }}
+				} @else if (condition) {
+					{{ 'elseif.block' | translate }}
+				} @else {
+					{{ 'else.block' | translate }}
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename)?.keys();
+			expect(keys).to.deep.equal(['if.block', 'elseif.block', 'else.block']);
+		});
+
+		it('should extract keys from elements inside a @for/@empty block', () => {
+			const contents = `
+				@for (user of users; track user.id) {
+					{{ 'for.block' | translate }}
+				} @empty {
+					{{ 'for.empty.block' | translate }}
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename).keys();
+			expect(keys).to.deep.equal(['for.block', 'for.empty.block']);
+		});
+
+		it('should extract keys from elements inside an @switch/@case block', () => {
+			const contents = `
+			@switch (condition) {
+				@case (caseA) {
+				  {{ 'switch.caseA' | translate }}
+				}
+				@case (caseB) {
+				  {{ 'switch.caseB' | translate }}
+				}
+				@default {
+				  {{ 'switch.default' | translate }}
+				}
+			  }`;
+
+			const keys = parser.extract(contents, templateFilename).keys();
+			expect(keys).to.deep.equal(['switch.caseA', 'switch.caseB', 'switch.default']);
+		});
+
+		it('should extract keys from elements inside an @deferred/@error/@loading/@placeholder block', () => {
+			const contents = `
+				@defer (on viewport) {
+					{{ 'defer' | translate }}
+				} @loading {
+					{{ 'defer.loading' | translate }}
+				} @error {
+					{{ 'defer.error' | translate }}
+				} @placeholder {
+					{{ 'defer.placeholder' | translate }}
+				}`;
+
+			const keys = parser.extract(contents, templateFilename).keys();
+			expect(keys).to.deep.equal(['defer', 'defer.error', 'defer.loading', 'defer.placeholder']);
+		});
+
+		it('should extract keys from nested blocks', () => {
+			const contents = `
+				@if (loggedIn) {
+					{{ 'if.block' | translate }}
+					@if (nestedCondition) {
+						@if (nestedCondition) {
+							{{ 'nested.if.block' | translate }}
+						}  @else {
+							{{ 'nested.else.block' | translate }}
+						}
+					} @else if (nestedElseIfCondition) {
+						{{ 'nested.elseif.block' | translate }}
+					}
+				} @else if (condition) {
+					{{ 'elseif.block' | translate }}
+				} @else {
+					{{ 'else.block' | translate }}
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename)?.keys();
+			expect(keys).to.deep.equal([
+				'if.block',
+				'nested.if.block',
+				'nested.else.block',
+				'nested.elseif.block',
+				'elseif.block',
+				'else.block'
+			]);
+		});
+
+		it('should handle ast with arbitrary depth without hitting the call stack limit', () => {
+			const depth = 500;
+			const contents = `
+				${Array(depth).fill('<i>').join('')}
+					{{ 'deep' | translate }}
+				${Array(depth).fill('</i>').join('')}
+			`;
+
+			const keys = parser.extract(contents, templateFilename)?.keys();
+			expect(contents).to.contain('<i><i><i><i><i><i>');
+			expect(keys).to.deep.equal(['deep']);
+		});
+	});
 });

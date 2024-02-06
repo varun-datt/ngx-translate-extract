@@ -7,8 +7,7 @@ import { CompilerInterface } from '../../compilers/compiler.interface.js';
 import { cyan, green, bold, dim, red } from 'colorette';
 import * as fs from 'fs';
 import * as path from 'path';
-import pkg from 'glob';
-const { sync } = pkg;
+import { sync } from 'glob';
 
 export interface ExtractTaskOptionsInterface {
 	replace?: boolean;

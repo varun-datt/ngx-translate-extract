@@ -44,10 +44,7 @@ export const cli = y
 		normalize: true,
 		required: true
 	})
-	.coerce('input', (input: string[]) => {
-		const paths = normalizePaths(input, parsed.patterns);
-		return paths;
-	})
+	.coerce('input', (input: string[]) => normalizePaths(input, parsed.patterns))
 	.option('output', {
 		alias: 'o',
 		describe: 'Paths where you would like to save extracted strings. You can use path expansion, glob patterns and multiple paths',
@@ -55,10 +52,7 @@ export const cli = y
 		normalize: true,
 		required: true
 	})
-	.coerce('output', (output: string[]) => {
-		const paths = normalizePaths(output, parsed.patterns);
-		return paths;
-	})
+	.coerce('output', (output: string[]) => normalizePaths(output, parsed.patterns))
 	.option('format', {
 		alias: 'f',
 		describe: 'Format',

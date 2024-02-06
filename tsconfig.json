@@ -3,15 +3,14 @@
         "noImplicitAny": true,
         "noImplicitReturns": true,
         "noImplicitThis": true,
-        "noImplicitUseStrict": true,
         "removeComments": true,
         "declaration": true,
         "target": "esnext",
         "lib": [
-            "es2019",
+            "es2022",
             "DOM"
         ],
-        "module": "ES2020",
+        "module": "es2022",
         "esModuleInterop": true,
         "moduleResolution": "node",
         "outDir": "dist",

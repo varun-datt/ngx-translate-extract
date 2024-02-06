@@ -188,4 +188,101 @@ describe('DirectiveParser', () => {
 		expect(keys).to.deep.equal(['this is an example']);
 	});
 
+	describe('Built-in control flow', () => {
+		it('should extract keys from elements inside an @if/@else block', () => {
+			const contents = `
+				@if (loggedIn) {
+					<p translate>if.block</p>
+				} @else if (condition) {
+					<p translate>elseif.block</p>
+				} @else {
+					<p translate>else.block</p>
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename)?.keys();
+			expect(keys).to.deep.equal(['if.block', 'elseif.block', 'else.block']);
+		});
+
+		it('should extract keys from elements inside a @for/@empty block', () => {
+			const contents = `
+				@for (user of users; track user.id) {
+					<p translate>for.block</p>
+				} @empty {
+					<p translate>for.empty.block</p>
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename).keys();
+			expect(keys).to.deep.equal(['for.block', 'for.empty.block']);
+		});
+
+		it('should extract keys from elements inside an @switch/@case block', () => {
+			const contents = `
+				@switch (condition) {
+					@case (caseA) {
+						<p translate>switch.caseA</p>
+					}
+					@case (caseB) {
+						<p translate>switch.caseB</p>
+					}
+					@default {
+						<p translate>switch.default</p>
+					}
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename).keys();
+			expect(keys).to.deep.equal(['switch.caseA', 'switch.caseB', 'switch.default']);
+		});
+
+		it('should extract keys from elements inside an @deferred/@error/@loading/@placeholder block', () => {
+			const contents = `
+				@defer (on viewport) {
+					<p translate>defer</p>
+				} @loading {
+					<p translate>defer.loading</p>
+				} @error {
+					<p translate>defer.error</p>
+				} @placeholder {
+					<p translate>defer.placeholder</p>
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename).keys();
+			expect(keys).to.deep.equal(['defer', 'defer.placeholder', 'defer.loading', 'defer.error']);
+		});
+
+		it('should extract keys from nested blocks', () => {
+			const contents = `
+				@if (loggedIn) {
+					<p translate>if.block</p>
+					@if (nestedCondition) {
+						@if (nestedCondition) {
+							<p translate>nested.if.block</p>
+						}  @else {
+							<p translate>nested.else.block</p>
+						}
+					} @else if (nestedElseIfCondition) {
+						<p translate>nested.elseif.block</p>
+					}
+				} @else if (condition) {
+					<p translate>elseif.block</p>
+				} @else {
+					<p translate>else.block</p>
+				}
+			`;
+
+			const keys = parser.extract(contents, templateFilename)?.keys();
+			expect(keys).to.deep.equal([
+				'if.block',
+				'elseif.block',
+				'else.block',
+				'nested.elseif.block',
+				'nested.if.block',
+				'nested.else.block'
+			]);
+		});
+	});
+
 });

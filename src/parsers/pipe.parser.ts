@@ -10,7 +10,12 @@ import {
 	LiteralMap,
 	LiteralArray,
 	Interpolation,
-	Call
+	Call,
+	TmplAstIfBlock,
+	TmplAstSwitchBlock,
+	TmplAstDeferredBlock,
+	TmplAstForLoopBlock,
+	TmplAstElement
 } from '@angular/compiler';
 
 import { ParserInterface } from './parser.interface.js';
@@ -19,19 +24,74 @@ import { isPathAngularComponent, extractComponentInlineTemplate } from '../utils
 
 const TRANSLATE_PIPE_NAMES = ['translate'];
 
+
+function traverseAstNodes<RESULT extends unknown, NODE extends TmplAstNode | TmplAstElement>(
+	nodes: (NODE | null)[],
+	visitor: (node: NODE) => RESULT[],
+	accumulator: RESULT[] = []
+): RESULT[] {
+	for (const node of nodes) {
+		if (node) {
+			traverseAstNode(node, visitor, accumulator);
+		}
+	}
+
+	return accumulator;
+}
+
+function traverseAstNode<RESULT extends unknown, NODE extends TmplAstNode | TmplAstElement>(
+	node: NODE,
+	visitor: (node: NODE) => RESULT[],
+	accumulator: RESULT[] = []
+): RESULT[] {
+	accumulator.push(...visitor(node));
+
+	const children: TmplAstNode[] = [];
+	// children of templates, html elements or blocks
+	if ('children' in node && node.children) {
+		children.push(...node.children);
+	}
+
+	// contents of @for extra sibling block @empty
+	if (node instanceof TmplAstForLoopBlock) {
+		children.push(node.empty);
+	}
+
+	// contents of @defer extra sibling blocks @error, @placeholder and @loading
+	if (node instanceof TmplAstDeferredBlock) {
+		children.push(node.error);
+		children.push(node.loading);
+		children.push(node.placeholder);
+	}
+
+	// contents of @if and @else (ignoring the @if(...) condition statement though)
+	if (node instanceof TmplAstIfBlock) {
+		children.push(...node.branches.flatMap((inner) => inner.children));
+	}
+
+	// contents of @case blocks (ignoring the @switch(...) statement though)
+	if (node instanceof TmplAstSwitchBlock) {
+		children.push(...node.cases.flatMap((inner) => inner.children));
+	}
+
+	return traverseAstNodes(children, visitor, accumulator);
+}
+
 export class PipeParser implements ParserInterface {
 	constructor(private readonly pipes?: string[]) {
 		this.pipes = pipes && pipes.length ? pipes : TRANSLATE_PIPE_NAMES;
 	}
 
-	public extract(source: string, filePath: string): TranslationCollection | null {
+	public extract(source: string, filePath: string): TranslationCollection {
 		if (filePath && isPathAngularComponent(filePath)) {
 			source = extractComponentInlineTemplate(source);
 		}
 
 		let collection: TranslationCollection = new TranslationCollection();
 		const nodes: TmplAstNode[] = this.parseTemplate(source, filePath);
-		const pipes: BindingPipe[] = nodes.map((node) => this.findPipesInNode(node)).flat();
+
+		const pipes = traverseAstNodes(nodes, (node) => this.findPipesInNode(node));
+
 		pipes.forEach((pipe) => {
 			this.parseTranslationKeysFromPipe(pipe).forEach((key: string) => {
 				collection = collection.add(key);
@@ -41,17 +101,7 @@ export class PipeParser implements ParserInterface {
 	}
 
 	protected findPipesInNode(node: any): BindingPipe[] {
-		let ret: BindingPipe[] = [];
-
-		if (node?.children) {
-			ret = node.children.reduce(
-				(result: BindingPipe[], childNode: TmplAstNode) => {
-					const children = this.findPipesInNode(childNode);
-					return result.concat(children);
-				},
-				[ret]
-			);
-		}
+		const ret: BindingPipe[] = [];
 
 		if (node?.value?.ast) {
 			ret.push(...this.getTranslatablesFromAst(node.value.ast));
@@ -61,7 +111,7 @@ export class PipeParser implements ParserInterface {
 			const translateableAttributes = node.attributes.filter((attr: TmplAstTextAttribute) => {
 				return this.pipes.includes(attr.name);
 			});
-			ret = [...ret, ...translateableAttributes];
+			ret.push(...translateableAttributes);
 		}
 
 		if (node?.inputs) {
@@ -69,6 +119,15 @@ export class PipeParser implements ParserInterface {
 				// <element [attrib]="'identifier' | translate">
 				if (input?.value?.ast) {
 					ret.push(...this.getTranslatablesFromAst(input.value.ast));
+				}
+			});
+		}
+
+		if (node?.templateAttrs) {
+			node.templateAttrs.forEach((attr: any) => {
+				// <element *directive="'identifier' | translate">
+				if (attr?.value?.ast) {
+					ret.push(...this.getTranslatablesFromAst(attr.value.ast));
 				}
 			});
 		}

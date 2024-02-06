@@ -28,4 +28,40 @@ describe('SortByKeyPostProcessor', () => {
 			z: 'last value'
 		});
 	});
+
+	it('should perform case insensitive sorting', () => {
+		const collection = new TranslationCollection({
+			c: 'letter c',
+			j: 'letter j',
+			b: 'letter b',
+			a: 'letter a',
+			h: 'letter h',
+			B: 'letter B',
+			H: 'letter H',
+			i: 'letter i',
+			C: 'letter C',
+			e: 'letter e',
+			f: 'letter f',
+			d: 'letter d',
+			A: 'letter A',
+			g: 'letter g',
+		});
+
+		expect(processor.process(collection, new TranslationCollection(), new TranslationCollection()).values).to.deep.equal({
+			A: 'letter A',
+			a: 'letter a',
+			B: 'letter B',
+			b: 'letter b',
+			c: 'letter c',
+			C: 'letter C',
+			d: 'letter d',
+			e: 'letter e',
+			f: 'letter f',
+			g: 'letter g',
+			H: 'letter H',
+			h: 'letter h',
+			i: 'letter i',
+			j: 'letter j',
+		});
+	});
 });

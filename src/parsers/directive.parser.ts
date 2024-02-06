@@ -1,25 +1,39 @@
 import {
-	parseTemplate,
-	TmplAstNode as Node,
-	TmplAstElement as Element,
-	TmplAstText as Text,
-	TmplAstTemplate as Template,
-	TmplAstTextAttribute as TextAttribute,
-	TmplAstBoundAttribute as BoundAttribute,
 	AST,
 	ASTWithSource,
-	LiteralPrimitive,
-	Conditional,
 	Binary,
 	BindingPipe,
+	Conditional,
 	Interpolation,
 	LiteralArray,
-	LiteralMap
+	LiteralMap,
+	LiteralPrimitive,
+	parseTemplate,
+	TmplAstBoundAttribute as BoundAttribute,
+	TmplAstElement as Element,
+	TmplAstNode as Node,
+	TmplAstTemplate as Template,
+	TmplAstText as Text,
+	TmplAstTextAttribute as TextAttribute,
+	ParseSourceSpan,
+	TmplAstIfBlock,
+	TmplAstSwitchBlock,
+	TmplAstForLoopBlock,
+	TmplAstDeferredBlock
 } from '@angular/compiler';
 
 import { ParserInterface } from './parser.interface.js';
 import { TranslationCollection } from '../utils/translation.collection.js';
 import { isPathAngularComponent, extractComponentInlineTemplate } from '../utils/utils.js';
+
+interface BlockNode {
+	nameSpan: ParseSourceSpan;
+	sourceSpan: ParseSourceSpan;
+	startSourceSpan: ParseSourceSpan;
+	endSourceSpan: ParseSourceSpan | null;
+	children: Node[] | undefined;
+	visit<Result>(visitor: unknown): Result;
+}
 
 const TRANSLATE_ATTR_NAMES = ['translate'];
 type ElementLike = Element | Template;
@@ -29,7 +43,7 @@ export class DirectiveParser implements ParserInterface {
 		this.attrNames = attrNames && attrNames.length ? attrNames : TRANSLATE_ATTR_NAMES;
 	}
 
-	public extract(source: string, filePath: string): TranslationCollection | null {
+	public extract(source: string, filePath: string): TranslationCollection {
 		let collection: TranslationCollection = new TranslationCollection();
 
 		if (filePath && isPathAngularComponent(filePath)) {
@@ -82,7 +96,40 @@ export class DirectiveParser implements ParserInterface {
 				elements = [...elements, ...childElements];
 			}
 		});
+
+		nodes.filter(this.isBlockNode).forEach((node) => elements.push(...this.getElementsWithTranslateAttributeFromBlockNodes(node)));
+
 		return elements;
+	}
+
+	/**
+	 * Get the child elements that are inside a block node (e.g. @if, @deferred)
+	 */
+	protected getElementsWithTranslateAttributeFromBlockNodes(blockNode: BlockNode) {
+		let blockChildren = blockNode.children;
+
+		if (blockNode instanceof TmplAstIfBlock) {
+			blockChildren = blockNode.branches.map((branch) => branch.children).flat();
+		}
+
+		if (blockNode instanceof TmplAstSwitchBlock) {
+			blockChildren = blockNode.cases.map((branch) => branch.children).flat();
+		}
+
+		if (blockNode instanceof TmplAstForLoopBlock) {
+			const emptyBlockChildren = blockNode.empty?.children ?? [];
+			blockChildren.push(...emptyBlockChildren);
+		}
+
+		if (blockNode instanceof TmplAstDeferredBlock) {
+			const placeholderBlockChildren = blockNode.placeholder?.children ?? [];
+			const loadingBlockChildren = blockNode.loading?.children ?? [];
+			const errorBlockChildren = blockNode.error?.children ?? [];
+
+			blockChildren.push(...placeholderBlockChildren, ...loadingBlockChildren, ...errorBlockChildren);
+		}
+
+		return this.getElementsWithTranslateAttribute(blockChildren);
 	}
 
 	/**
@@ -168,6 +215,19 @@ export class DirectiveParser implements ParserInterface {
 	 */
 	protected isElementLike(node: Node): node is ElementLike {
 		return node instanceof Element || node instanceof Template;
+	}
+
+	/**
+	 * Check if node type is BlockNode
+	 * @param node
+	 */
+	protected isBlockNode(node: Node): node is BlockNode {
+		return (
+			node.hasOwnProperty('nameSpan') &&
+			node.hasOwnProperty('sourceSpan') &&
+			node.hasOwnProperty('startSourceSpan') &&
+			node.hasOwnProperty('endSourceSpan')
+		);
 	}
 
 	/**
