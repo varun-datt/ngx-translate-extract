@@ -40,7 +40,7 @@ export function findClassDeclarations(node: Node): ClassDeclaration[] {
 }
 
 export function findClassPropertyByType(node: ClassDeclaration, type: string): string | null {
-	return findClassPropertyConstructorParameterByType(node, type) || findClassPropertyDeclarationByType(node, type);
+	return findClassPropertyConstructorParameterByType(node, type) || findClassPropertyDeclarationByType(node, type) || findClassPropertyDeclarationByInject(node, type) || findClassPropertyGetterByType(node, type);
 }
 
 export function findConstructorDeclaration(node: ClassDeclaration): ConstructorDeclaration {
@@ -85,6 +85,24 @@ export function findClassPropertyDeclarationByType(node: ClassDeclaration, type:
 	return null;
 }
 
+export function findClassPropertyDeclarationByInject(node: ClassDeclaration, type: string): string | null {
+	const query = `PropertyDeclaration:has(CallExpression > Identifier[name="inject"]):has(CallExpression > Identifier[name="${type}"]) > Identifier`;
+	const [result] = tsquery<Identifier>(node, query);
+	if (result) {
+		return result.text;
+	}
+	return null;
+}
+
+export function findClassPropertyGetterByType(node: ClassDeclaration, type: string): string | null {
+	const query = `GetAccessor:has(TypeReference > Identifier[name="${type}"]) > Identifier`;
+	const [result] = tsquery<Identifier>(node, query);
+	if (result) {
+		return result.text;
+	}
+	return null;
+}
+
 export function findFunctionCallExpressions(node: Node, fnName: string | string[]): CallExpression[] {
 	if (Array.isArray(fnName)) {
 		fnName = fnName.join('|');
@@ -94,13 +112,34 @@ export function findFunctionCallExpressions(node: Node, fnName: string | string[
 	return nodes;
 }
 
+export function findSimpleCallExpressions(node: Node, fnName: string) {
+	if (Array.isArray(fnName)) {
+		fnName = fnName.join('|');
+	}
+	const query = `CallExpression:has(Identifier[name="${fnName}"])`;
+	return tsquery<CallExpression>(node, query);
+}
+
 export function findPropertyCallExpressions(node: Node, prop: string, fnName: string | string[]): CallExpression[] {
 	if (Array.isArray(fnName)) {
 		fnName = fnName.join('|');
 	}
-	const query = `CallExpression > PropertyAccessExpression:has(Identifier[name=/^(${fnName})$/]):has(PropertyAccessExpression:has(Identifier[name="${prop}"]):has(ThisKeyword))`;
-	const nodes = tsquery<PropertyAccessExpression>(node, query).map((n) => n.parent as CallExpression);
-	return nodes;
+	const query = 'CallExpression > ' +
+        `PropertyAccessExpression:has(Identifier[name=/^(${fnName})$/]):has(PropertyAccessExpression:has(Identifier[name="${prop}"]):has(ThisKeyword)) > ` +
+        `PropertyAccessExpression:has(ThisKeyword) > Identifier[name="${prop}"]`;
+	const nodes = tsquery<Identifier>(node, query);
+	// Since the direct descendant operator (>) is not supported in :has statements, we need to
+	// check manually whether everything is correctly matched
+	const filtered = nodes.reduce<CallExpression[]>((result: CallExpression[], n: Node) => {
+		if (
+			tsquery(n.parent, 'PropertyAccessExpression > ThisKeyword').length > 0 &&
+			tsquery(n.parent.parent, `PropertyAccessExpression > Identifier[name=/^(${fnName})$/]`).length > 0
+		) {
+			result.push(n.parent.parent.parent as CallExpression);
+		}
+		return result;
+	}, []);
+	return filtered;
 }
 
 export function getStringsFromExpression(expression: Expression): string[] {

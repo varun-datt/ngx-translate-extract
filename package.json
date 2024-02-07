@@ -1,6 +1,6 @@
 {
   "name": "@vpoppy/ngx-translate-extract",
-  "version": "9.0.0",
+  "version": "9.0.1",
   "description": "Extract strings from projects using ngx-translate - Fork of @biesbjerg/ngx-translate-extract",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
