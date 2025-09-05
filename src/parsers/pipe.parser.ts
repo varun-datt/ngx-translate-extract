@@ -15,7 +15,8 @@ import {
 	TmplAstSwitchBlock,
 	TmplAstDeferredBlock,
 	TmplAstForLoopBlock,
-	TmplAstElement
+	TmplAstElement,
+	ParenthesizedExpression
 } from '@angular/compiler';
 
 import { ParserInterface } from './parser.interface.js';
@@ -23,7 +24,6 @@ import { TranslationCollection } from '../utils/translation.collection.js';
 import { isPathAngularComponent, extractComponentInlineTemplate } from '../utils/utils.js';
 
 const TRANSLATE_PIPE_NAMES = ['translate'];
-
 
 function traverseAstNodes<RESULT extends unknown, NODE extends TmplAstNode | TmplAstElement>(
 	nodes: (NODE | null)[],
@@ -135,7 +135,7 @@ export class PipeParser implements ParserInterface {
 		return ret;
 	}
 
-	protected parseTranslationKeysFromPipe(pipeContent: BindingPipe | LiteralPrimitive | Conditional): string[] {
+	protected parseTranslationKeysFromPipe(pipeContent: AST): string[] {
 		const ret: string[] = [];
 		if (pipeContent instanceof LiteralPrimitive) {
 			ret.push(pipeContent.value);
@@ -146,6 +146,8 @@ export class PipeParser implements ParserInterface {
 			ret.push(...this.parseTranslationKeysFromPipe(falseExp));
 		} else if (pipeContent instanceof BindingPipe) {
 			ret.push(...this.parseTranslationKeysFromPipe(pipeContent.exp as any));
+		} else if (pipeContent instanceof ParenthesizedExpression) {
+			ret.push(...this.parseTranslationKeysFromPipe(pipeContent.expression));
 		}
 		return ret;
 	}
@@ -199,6 +201,10 @@ export class PipeParser implements ParserInterface {
 
 		if (ast instanceof Call) {
 			return this.getTranslatablesFromAsts(ast.args);
+		}
+
+		if (ast instanceof ParenthesizedExpression) {
+			return this.getTranslatablesFromAsts([ast.expression]);
 		}
 
 		return [];

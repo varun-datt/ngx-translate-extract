@@ -19,7 +19,8 @@ import {
 	TmplAstIfBlock,
 	TmplAstSwitchBlock,
 	TmplAstForLoopBlock,
-	TmplAstDeferredBlock
+	TmplAstDeferredBlock,
+	ParenthesizedExpression
 } from '@angular/compiler';
 
 import { ParserInterface } from './parser.interface.js';
@@ -200,6 +201,8 @@ export class DirectiveParser implements ParserInterface {
 			visit = [exp.left, exp.right];
 		} else if (exp instanceof ASTWithSource) {
 			visit = [exp.ast];
+		} else if (exp instanceof ParenthesizedExpression) {
+			visit = [exp.expression];
 		}
 
 		let results: LiteralPrimitive[] = [];

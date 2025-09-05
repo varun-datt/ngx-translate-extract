@@ -1,6 +1,6 @@
 {
   "name": "@vpoppy/ngx-translate-extract",
-  "version": "9.0.1",
+  "version": "10.0.0",
   "description": "Extract strings from projects using ngx-translate - Fork of @biesbjerg/ngx-translate-extract",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -62,13 +62,13 @@
   "config": {},
   "type": "module",
   "devDependencies": {
-    "@angular/compiler": "^17",
+    "@angular/compiler": "^20",
     "@types/braces": "^3.0.0",
     "@types/chai": "^4.3.11",
     "@types/flat": "^5.0.2",
     "@types/gettext-parser": "4.0.0",
     "@types/mocha": "^10.0.6",
-    "@types/node": "^18",
+    "@types/node": "^20",
     "braces": "^3.0.2",
     "chai": "^5.0.3",
     "cross-env": "^7.0.3",
@@ -78,11 +78,11 @@
     "prettier": "^2.2.1",
     "rimraf": "^5.0.5",
     "ts-node": "^10.9.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "@angular/compiler": ">=17.0.0",
-    "typescript": ">=5.2.0"
+    "@angular/compiler": ">=20.0.0",
+    "typescript": ">=5.8.0"
   },
   "dependencies": {
     "@phenomnomnominal/tsquery": "^6",
@@ -90,7 +90,7 @@
     "colorette": "^2",
     "flat": "^5.0.2",
     "gettext-parser": "^6",
-    "glob": "^10",
+    "glob": "^11",
     "terminal-link": "^3.0.0",
     "yargs": "^17.3.1"
   }
